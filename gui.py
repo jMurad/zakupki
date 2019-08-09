@@ -3,7 +3,7 @@
 # Form implementation generated from reading ui file 'gui.ui',
 # licensing of 'gui.ui' applies.
 #
-# Created: Thu Aug  8 10:58:00 2019
+# Created: Fri Aug  9 08:13:10 2019
 #      by: pyside2-uic  running on PySide2 5.13.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -14,8 +14,8 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(844, 673)
-        MainWindow.setMinimumSize(QtCore.QSize(844, 550))
-        MainWindow.setMaximumSize(QtCore.QSize(844, 800))
+        MainWindow.setMinimumSize(QtCore.QSize(844, 673))
+        MainWindow.setMaximumSize(QtCore.QSize(844, 673))
         MainWindow.setToolButtonStyle(QtCore.Qt.ToolButtonTextOnly)
         MainWindow.setDocumentMode(False)
         MainWindow.setTabShape(QtWidgets.QTabWidget.Rounded)
@@ -111,8 +111,11 @@ class Ui_MainWindow(object):
         self.label_15.setObjectName("label_15")
         self.verticalLayout_8.addWidget(self.label_15)
         self.listWidget = QtWidgets.QListWidget(self.verticalLayoutWidget_7)
+        self.listWidget.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
+        self.listWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectItems)
+        self.listWidget.setLayoutMode(QtWidgets.QListView.Batched)
+        self.listWidget.setSelectionRectVisible(True)
         self.listWidget.setObjectName("listWidget")
-        self.listWidget.setProperty('selectionMode', 'MultiSelection')
         self.verticalLayout_8.addWidget(self.listWidget)
         self.line_1 = QtWidgets.QFrame(self.centralwidget)
         self.line_1.setGeometry(QtCore.QRect(410, -1, 21, 531))
@@ -242,8 +245,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.checkBox_3 = QtWidgets.QCheckBox(self.verticalLayoutWidget_2)
+        self.checkBox_3.setChecked(True)
         self.checkBox_3.setObjectName("checkBox_3")
-        self.checkBox_3.setProperty("checked", True)
         self.horizontalLayout_2.addWidget(self.checkBox_3)
         self.checkBox_4 = QtWidgets.QCheckBox(self.verticalLayoutWidget_2)
         self.checkBox_4.setObjectName("checkBox_4")
@@ -253,7 +256,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.addWidget(self.checkBox_5)
         self.verticalLayout_2.addLayout(self.horizontalLayout_2)
         self.verticalLayoutWidget_8 = QtWidgets.QWidget(self.centralwidget)
-        self.verticalLayoutWidget_8.setGeometry(QtCore.QRect(10, 7, 391, 41))
+        self.verticalLayoutWidget_8.setGeometry(QtCore.QRect(10, 7, 391, 44))
         self.verticalLayoutWidget_8.setObjectName("verticalLayoutWidget_8")
         self.verticalLayout_1 = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_8)
         self.verticalLayout_1.setContentsMargins(0, 0, 0, 0)
@@ -281,7 +284,8 @@ class Ui_MainWindow(object):
         self.pushButton_1.setObjectName("pushButton_1")
         self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
         self.progressBar.setGeometry(QtCore.QRect(0, 650, 844, 23))
-        self.progressBar.setProperty("value", 0)
+        self.progressBar.setMaximum(1000)
+        self.progressBar.setProperty("value", 100)
         self.progressBar.setAlignment(QtCore.Qt.AlignCenter)
         self.progressBar.setTextVisible(True)
         self.progressBar.setTextDirection(QtWidgets.QProgressBar.TopToBottom)
@@ -322,6 +326,7 @@ class Ui_MainWindow(object):
         self.label_17.setObjectName("label_17")
         self.verticalLayout_10.addWidget(self.label_17)
         self.lineEdit_11 = QtWidgets.QLineEdit(self.verticalLayoutWidget_13)
+        self.lineEdit_11.setText("")
         self.lineEdit_11.setObjectName("lineEdit_11")
         self.verticalLayout_10.addWidget(self.lineEdit_11)
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
@@ -391,6 +396,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
+        self.listWidget.setCurrentRow(-1)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
