@@ -531,7 +531,7 @@
        <property name="mouseTracking">
         <bool>false</bool>
        </property>
-       <property name="tabletTracking">
+       <property name="tabletTracking" stdset="0">
         <bool>false</bool>
        </property>
       </widget>
@@ -576,13 +576,13 @@
      <number>1000</number>
     </property>
     <property name="value">
-     <number>100</number>
+     <number>0</number>
     </property>
     <property name="alignment">
      <set>Qt::AlignCenter</set>
     </property>
     <property name="textVisible">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
     <property name="textDirection">
      <enum>QProgressBar::TopToBottom</enum>

@@ -3,7 +3,7 @@
 # Form implementation generated from reading ui file 'gui.ui',
 # licensing of 'gui.ui' applies.
 #
-# Created: Fri Aug  9 08:13:10 2019
+# Created: Fri Aug  9 08:48:50 2019
 #      by: pyside2-uic  running on PySide2 5.13.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -272,7 +272,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_1.addWidget(self.label_1)
         self.lineEdit_1 = QtWidgets.QLineEdit(self.verticalLayoutWidget_8)
         self.lineEdit_1.setMouseTracking(False)
-        self.lineEdit_1.setTabletTracking(False)
+        self.lineEdit_1.setProperty("tabletTracking", False)
         self.lineEdit_1.setObjectName("lineEdit_1")
         self.verticalLayout_1.addWidget(self.lineEdit_1)
         self.pushButton_1 = QtWidgets.QPushButton(self.centralwidget)
@@ -285,9 +285,9 @@ class Ui_MainWindow(object):
         self.progressBar = QtWidgets.QProgressBar(self.centralwidget)
         self.progressBar.setGeometry(QtCore.QRect(0, 650, 844, 23))
         self.progressBar.setMaximum(1000)
-        self.progressBar.setProperty("value", 100)
+        self.progressBar.setProperty("value", 0)
         self.progressBar.setAlignment(QtCore.Qt.AlignCenter)
-        self.progressBar.setTextVisible(True)
+        self.progressBar.setTextVisible(False)
         self.progressBar.setTextDirection(QtWidgets.QProgressBar.TopToBottom)
         self.progressBar.setObjectName("progressBar")
         self.verticalLayoutWidget_9 = QtWidgets.QWidget(self.centralwidget)
