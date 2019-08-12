@@ -1,5 +1,5 @@
 № Пробразование .ui файла в .py файл
-pyside2-uic -x mainwindow.ui -o desktop.py
+pyside2-uic -x gui.ui -o gui.py
 
 № Активация и деактивация виртуального окружения
 venv\Scripts\activate.bat

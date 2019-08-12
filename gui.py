@@ -3,7 +3,7 @@
 # Form implementation generated from reading ui file 'gui.ui',
 # licensing of 'gui.ui' applies.
 #
-# Created: Fri Aug  9 08:48:50 2019
+# Created: Sat Aug 10 16:15:26 2019
 #      by: pyside2-uic  running on PySide2 5.13.0
 #
 # WARNING! All changes made in this file will be lost!
@@ -92,7 +92,7 @@ class Ui_MainWindow(object):
         self.lineEdit_6.setObjectName("lineEdit_6")
         self.gridLayout_3.addWidget(self.lineEdit_6, 0, 3, 1, 1)
         self.lineEdit_5 = QtWidgets.QLineEdit(self.verticalLayoutWidget_5)
-        self.lineEdit_5.setObjectName("lineEdit_5")
+        self.lineEdit_5.setObjectName(";lineEdit_5")
         self.gridLayout_3.addWidget(self.lineEdit_5, 0, 1, 1, 1)
         self.verticalLayout_5.addLayout(self.gridLayout_3)
         self.verticalLayoutWidget_7 = QtWidgets.QWidget(self.centralwidget)
@@ -110,11 +110,11 @@ class Ui_MainWindow(object):
         self.label_15.setAlignment(QtCore.Qt.AlignBottom|QtCore.Qt.AlignLeading|QtCore.Qt.AlignLeft)
         self.label_15.setObjectName("label_15")
         self.verticalLayout_8.addWidget(self.label_15)
-        self.listWidget = QtWidgets.QListWidget(self.verticalLayoutWidget_7)
+        self.listWidget = MyListWidget(self.verticalLayoutWidget_7)
         self.listWidget.setSelectionMode(QtWidgets.QAbstractItemView.MultiSelection)
         self.listWidget.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectItems)
         self.listWidget.setLayoutMode(QtWidgets.QListView.Batched)
-        self.listWidget.setSelectionRectVisible(True)
+        self.listWidget.setSelectionRectVisible(False)
         self.listWidget.setObjectName("listWidget")
         self.verticalLayout_8.addWidget(self.listWidget)
         self.line_1 = QtWidgets.QFrame(self.centralwidget)
@@ -272,7 +272,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_1.addWidget(self.label_1)
         self.lineEdit_1 = QtWidgets.QLineEdit(self.verticalLayoutWidget_8)
         self.lineEdit_1.setMouseTracking(False)
-        self.lineEdit_1.setProperty("tabletTracking", False)
+        self.lineEdit_1.setTabletTracking(False)
         self.lineEdit_1.setObjectName("lineEdit_1")
         self.verticalLayout_1.addWidget(self.lineEdit_1)
         self.pushButton_1 = QtWidgets.QPushButton(self.centralwidget)
@@ -326,17 +326,14 @@ class Ui_MainWindow(object):
         self.label_17.setObjectName("label_17")
         self.verticalLayout_10.addWidget(self.label_17)
         self.lineEdit_11 = QtWidgets.QLineEdit(self.verticalLayoutWidget_13)
-        self.lineEdit_11.setText("")
+        self.lineEdit_11.setText("Протокол признания участника уклонившимся")
         self.lineEdit_11.setObjectName("lineEdit_11")
         self.verticalLayout_10.addWidget(self.lineEdit_11)
         self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_2.setGeometry(QtCore.QRect(10, 600, 191, 41))
+        self.pushButton_2.setGeometry(QtCore.QRect(10, 600, 321, 41))
         self.pushButton_2.setObjectName("pushButton_2")
-        self.pushButton_3 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_3.setGeometry(QtCore.QRect(240, 600, 191, 41))
-        self.pushButton_3.setObjectName("pushButton_3")
         self.pushButton_4 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_4.setGeometry(QtCore.QRect(470, 600, 191, 41))
+        self.pushButton_4.setGeometry(QtCore.QRect(340, 600, 321, 41))
         self.pushButton_4.setObjectName("pushButton_4")
         self.verticalLayoutWidget_14 = QtWidgets.QWidget(self.centralwidget)
         self.verticalLayoutWidget_14.setGeometry(QtCore.QRect(440, 418, 391, 46))
@@ -429,7 +426,6 @@ class Ui_MainWindow(object):
         self.label_16.setText(QtWidgets.QApplication.translate("MainWindow", "Электронная почта на который придет уведомление", None, -1))
         self.label_17.setText(QtWidgets.QApplication.translate("MainWindow", "Название протокола", None, -1))
         self.pushButton_2.setText(QtWidgets.QApplication.translate("MainWindow", "Старт", None, -1))
-        self.pushButton_3.setText(QtWidgets.QApplication.translate("MainWindow", "Пауза", None, -1))
         self.pushButton_4.setText(QtWidgets.QApplication.translate("MainWindow", "Стоп", None, -1))
         self.label_18.setText(QtWidgets.QApplication.translate("MainWindow", "Актуальность протокола (в минутах)", None, -1))
         self.checkBox_10.setText(QtWidgets.QApplication.translate("MainWindow", "Повторять по кругу", None, -1))
@@ -437,6 +433,14 @@ class Ui_MainWindow(object):
         self.label_22.setText(QtWidgets.QApplication.translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt; font-style:italic;\">0</span></p></body></html>", None, -1))
         self.label_19.setText(QtWidgets.QApplication.translate("MainWindow", "<html><head/><body><p><span style=\" font-size:10pt; font-weight:600;\">Всего записей:</span></p></body></html>", None, -1))
         self.label_20.setText(QtWidgets.QApplication.translate("MainWindow", "<html><head/><body><p><span style=\" font-size:9pt; font-style:italic;\">0</span></p></body></html>", None, -1))
+
+
+class MyListWidget(QtWidgets.QListWidget):
+    def __init__(self, parent):
+        QtWidgets.QListWidget.__init__(self, parent)
+
+    def mouseMoveEvent(self, event):
+        event.ignore()
 
 
 if __name__ == "__main__":

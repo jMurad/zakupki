@@ -9,9 +9,17 @@ import sys
 from PySide2 import QtWidgets
 from PySide2.QtCore import QThread, QObject, Signal, Slot
 import gui
+from PySide2.QtCore import Qt, QRegExp
+from PySide2.QtGui import QRegExpValidator
+from PySide2 import QtCore
 
 
 class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
+    sig = Signal(object)
+    sig2 = Signal(object)
+    sig3 = Signal(object)
+    params = Signal(int, int)
+
     def __init__(self):
         super().__init__()
         self.regions = [
@@ -104,17 +112,80 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         ]
         self.pbValue = 0
         self.setupUi(self)
-        self.pushButton_1.clicked.connect(self.find)
         self.listWidget.addItems(self.regions)
-        self.lineEdit_11.setText('Протокол признания участника уклонившимся')
+
+        validator = QRegExpValidator(QRegExp("[0-9]{0,25}"))
+        self.lineEdit_2.setValidator(validator)
+        self.lineEdit_3.setValidator(validator)
+        self.lineEdit_4.setValidator(validator)
+        validator = QRegExpValidator(QRegExp("[0-2]{0,1}[1-9]{1}\.[0-1]{0,1}[1-2]{1}\.[1-2]{1}[0-9]{3}"))
+        self.lineEdit_5.setValidator(validator)
+        self.lineEdit_6.setValidator(validator)
+        self.lineEdit_7.setValidator(validator)
+        self.lineEdit_8.setValidator(validator)
+        validator = QRegExpValidator(QRegExp("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}"))
+        self.lineEdit_10.setValidator(validator)
+        self.lineEdit_1.textChanged.connect(lambda: self.valid_form('lineEdit_9'))
+        self.lineEdit_2.textChanged.connect(lambda: self.valid_form('lineEdit_2'))
+        self.lineEdit_9.textChanged.connect(lambda: self.valid_form('lineEdit_9'))
+        self.checkBox_1.stateChanged.connect(lambda: self.valid_form('checkBox_1'))
+        self.checkBox_2.stateChanged.connect(lambda: self.valid_form('checkBox_2'))
+        self.checkBox_3.stateChanged.connect(lambda: self.valid_form('fz1'))
+        self.checkBox_4.stateChanged.connect(lambda: self.valid_form('fz2'))
+        self.checkBox_5.stateChanged.connect(lambda: self.valid_form('fz2'))
+        self.listWidget.itemSelectionChanged.connect(lambda: self.valid_form('listWidget'))
+
+        self.pushButton_1.clicked.connect(self.find)
+        self.pushButton_2.clicked.connect(self.start)
+        self.pushButton_4.clicked.connect(self.stop)
 
         self.poisk = Poisk()
-        self.thread = QThread()
+        self.thread = FindProtocols()
+        self.sig.connect(self.thread.on_obj)
+        self.sig.emit(self.poisk)
+        self.thread2 = GetAllProtocols(self.poisk)
+        self.sig2.connect(self.thread2.on_obj)
+        self.sig2.emit(self.poisk)
+        self.thread3 = GetTotalResults(self.poisk)
+        self.sig3.connect(self.thread3.on_obj)
+        self.sig3.emit(self.poisk)
+        self.params.connect(self.thread2.params)
+        self.params.emit(2, 500)
+        # self.poisk.moveToThread(self.thread)
+
+
         self.poisk.callTotalResults.connect(self.set_total_results)
-        self.poisk.moveToThread(self.thread)
-        # self.poisk.callExFunction.connect(self.thread.quit)
         self.poisk.callExFunction.connect(self.increment_progress)
-        self.thread.started.connect(self.poisk.find_protocols)
+        self.poisk.endPoisk.connect(self.end_poisk())
+        #self.thread.started.connect(self.poisk.find_protocols)
+        #self.thread.started.connect(lambda: self.poisk.get_all_pages(2, 500))
+        #self.thread.started.connect(self.poisk.get_total_results)
+
+
+    def closeEvent(self, e):
+        self.stop()
+
+    def valid_form(self, elem):
+        if elem == 'checkBox_1':
+            if self.checkBox_2.isChecked() & self.checkBox_1.isChecked():
+                self.checkBox_2.setChecked(False)
+        if elem == 'checkBox_2':
+            if self.checkBox_2.isChecked() & self.checkBox_1.isChecked():
+                self.checkBox_1.setChecked(False)
+        if elem == 'fz1':
+            if not (self.checkBox_3.checkState() | self.checkBox_4.checkState() | self.checkBox_5.checkState()):
+                self.checkBox_4.setChecked(True)
+        if elem == 'fz2':
+            if not (self.checkBox_3.checkState() | self.checkBox_4.checkState() | self.checkBox_5.checkState()):
+                self.checkBox_3.setChecked(True)
+        if elem == 'lineEdit_9':
+            text = self.lineEdit_1.text()
+            if text == '':
+                self.lineEdit_9.setText('')
+        if elem == 'listWidget':
+            cr = self.listWidget.currentRow()
+            if len(self.listWidget.selectedItems()) >= 6:
+                self.listWidget.setCurrentRow(self.listWidget.currentRow(), QtCore.QItemSelectionModel.Deselect)
 
     def validate_input(self):
         ss = self.lineEdit_1.text()
@@ -143,23 +214,33 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
 
     def find(self):
         inputdata = self.validate_input()
-
-        # poisk.callExFunction = self.increment_progress
-        # poisk.callTotalResults = self.set_total_results
         self.poisk.set_params(inputdata)
-        self.poisk.get_all_pages(1, 50)
+        self.thread2.start()
+        # self.poisk.get_all_pages(2, 500)
+        print(self.thread2.isFinished())
+        self.thread3.start()
+        # self.poisk.get_total_results()
+
+    def start(self):
+        self.find()
         self.progressBar.setMinimum(0)
         self.progressBar.setMaximum(self.poisk.totalPages)
-        print(self.poisk.allPages[0])
-        print(datetime.now())
         self.thread.start()
-        # poisk.get_protocol_found(1)
-        print(datetime.now())
         self.pbValue = 0
 
+    def stop(self):
+        self.poisk.active = False
+        self.thread.quit()
+        self.thread.wait()
+        self.progressBar.setValue(0)
+
+    def end_poisk(self):
+        self.thread.quit()
+
     def increment_progress(self):
-        self.pbValue += 1
-        self.progressBar.setValue(self.pbValue)
+        if self.poisk.active:
+            self.pbValue += 1
+            self.progressBar.setValue(self.pbValue)
 
     def set_total_results(self, text):
         self.label_20.setText(text)
@@ -168,6 +249,7 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
 class Poisk(QObject):
     callExFunction = Signal()
     callTotalResults = Signal(str)
+    endPoisk = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -296,6 +378,7 @@ class Poisk(QObject):
             'exclText': f'exclText={self.exclText}'
         }
         self.sess = requests.Session()
+        self.active = True
 
     def set_params(self, inputdata):
         self.searchString = inputdata[0]
@@ -384,6 +467,36 @@ class Poisk(QObject):
         r = self.sess.get(url, headers=headers)
         return r.text
 
+    @Slot()
+    def find_protocols(self):
+        print('s2')
+        k = 0
+        self.active = True
+        for page in self.allPages:
+            htmlpage = self.get_html(page)
+            bscontent = BeautifulSoup(htmlpage, 'lxml')
+            content = bscontent.findAll('div', class_='registerBox')
+            for cnt in content:
+                if self.active:
+                    urlprotocol = BeautifulSoup(str(cnt), 'lxml').select('div.reportBox li a')[1].attrs["href"]
+                    if 'http://' not in urlprotocol:
+                        urlprotocol = 'http://zakupki.gov.ru' + urlprotocol
+                    idzakupki = urlprotocol.split('=')[1]
+                    htmlprotocol = self.get_html(urlprotocol)
+                    soup = BeautifulSoup(htmlprotocol, 'lxml')
+                    resultsoup = soup.find(text=re.compile(r'Протокол признания участника уклонившимся'))
+                    datetm = 'not found'
+                    if resultsoup:
+                        datetm = resultsoup.parent.parent.parent.select('td')[1].select('div span')[1].text.strip()
+                        resultstr = {'datetime': datetm, 'id': idzakupki, 'url': urlprotocol}
+                        self.trueResult.append(resultstr)
+                        self.send_notification(datetm, str(resultstr))
+                    k += 1
+                    print({'datetime': datetm, 'id': idzakupki, 'url': urlprotocol}, k, '\n')
+                    self.callExFunction.emit()
+        self.endPoisk.emit('1')
+
+    @Slot()
     def get_all_pages(self, counts, rpp):
         print('s1')
         self.totalPages = counts * rpp
@@ -391,37 +504,17 @@ class Poisk(QObject):
         self.trueResult.clear()
         for i in range(1, counts + 1):
             self.allPages.append(self.generate_request(i, rpp))
+        self.endPoisk.emit('2')
+        print('s1_end')
 
     @Slot()
-    def find_protocols(self):
-        print('s2')
-        k = 0
-        for page in self.allPages:
-            htmlpage = self.get_html(page)
-            bscontent = BeautifulSoup(htmlpage, 'lxml')
-            if k == 0:
-                totalresults = bscontent.select('p.allRecords')[0].select('strong')[0].text
-                self.callTotalResults.emit(totalresults)
-            content = bscontent.findAll('div', class_='registerBox')
-            for cnt in content:
-                urlprotocol = BeautifulSoup(str(cnt), 'lxml').select('div.reportBox li a')[1].attrs["href"]
-                if 'http://' not in urlprotocol:
-                    urlprotocol = 'http://zakupki.gov.ru' + urlprotocol
-                idzakupki = urlprotocol.split('=')[1]
-                htmlprotocol = self.get_html(urlprotocol)
-                soup = BeautifulSoup(htmlprotocol, 'lxml')
-                resultsoup = soup.find(text=re.compile(r'Протокол признания участника уклонившимся'))
-                if resultsoup:
-                    datetm = resultsoup.parent.parent.parent.select('td')[1].select('div span')[1].text.strip()
-                    resultstr = {'datetime': datetm, 'id': idzakupki, 'url': urlprotocol}
-                    print('True: ', resultstr)
-                    self.trueResult.append(resultstr)
-                    self.send_notification(datetm, str(resultstr))
-                else:
-                    datetm = 'not found'
-                k += 1
-                print({'datetime': datetm, 'id': idzakupki, 'url': urlprotocol}, k, '\n')
-                self.callExFunction.emit()
+    def get_total_results(self):
+        page = self.allPages[0]
+        htmlpage = self.get_html(page)
+        bscontent = BeautifulSoup(htmlpage, 'lxml')
+        totalresults = bscontent.select('p.allRecords')[0].select('strong')[0].text
+        self.callTotalResults.emit(totalresults)
+        self.endPoisk.emit('3')
 
     def get_protocol_found(self, stat):
         print('s3')
@@ -474,6 +567,40 @@ class Poisk(QObject):
         minutes = round(divmod(razn.total_seconds(), 60)[0])
         return minutes
 
+class FindProtocols(QThread):
+    def __init__(self, parent=None):
+        QThread.__init__(self, parent)
+
+
+    def on_obj(self, obj):
+        self.obj = obj
+
+    def run(self):
+        self.obj.find_protocols()
+
+class GetAllProtocols(QThread):
+    def __init__(self, parent=None):
+        QThread.__init__(self, parent)
+
+    def on_obj(self, obj):
+        self.obj = obj
+
+    def params(self, counts, rpp):
+        self.counts = counts
+        self.rpp = rpp
+
+    def run(self):
+        self.obj.get_all_pages(self.counts, self.rpp)
+
+class GetTotalResults(QThread):
+    def __init__(self, parent=None):
+        QThread.__init__(self, parent)
+
+    def on_obj(self, obj):
+        self.obj = obj
+
+    def run(self):
+        self.obj.get_total_results()
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
