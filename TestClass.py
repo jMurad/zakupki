@@ -161,7 +161,6 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         #self.thread.started.connect(lambda: self.poisk.get_all_pages(2, 500))
         #self.thread.started.connect(self.poisk.get_total_results)
 
-
     def closeEvent(self, e):
         self.stop()
 
@@ -567,6 +566,7 @@ class Poisk(QObject):
         minutes = round(divmod(razn.total_seconds(), 60)[0])
         return minutes
 
+
 class FindProtocols(QThread):
     def __init__(self, parent=None):
         QThread.__init__(self, parent)
@@ -577,6 +577,7 @@ class FindProtocols(QThread):
 
     def run(self):
         self.obj.find_protocols()
+
 
 class GetAllProtocols(QThread):
     def __init__(self, parent=None):
@@ -592,6 +593,7 @@ class GetAllProtocols(QThread):
     def run(self):
         self.obj.get_all_pages(self.counts, self.rpp)
 
+
 class GetTotalResults(QThread):
     def __init__(self, parent=None):
         QThread.__init__(self, parent)
@@ -601,6 +603,7 @@ class GetTotalResults(QThread):
 
     def run(self):
         self.obj.get_total_results()
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
