@@ -140,17 +140,8 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         self.pushButton_4.clicked.connect(self.stop)
 
         self.poisk = Poisk()
-        self.thread = FindProtocols()
-        self.sig.connect(self.thread.on_obj)
-        self.sig.emit(self.poisk)
-        self.thread2 = GetAllProtocols(self.poisk)
-        self.sig2.connect(self.thread2.on_obj)
-        self.sig2.emit(self.poisk)
-        self.thread3 = GetTotalResults(self.poisk)
-        self.sig3.connect(self.thread3.on_obj)
-        self.sig3.emit(self.poisk)
-        self.params.connect(self.thread2.params)
-        self.params.emit(2, 500)
+
+
         # self.poisk.moveToThread(self.thread)
 
 
@@ -565,44 +556,6 @@ class Poisk(QObject):
         razn = dt - timemsk
         minutes = round(divmod(razn.total_seconds(), 60)[0])
         return minutes
-
-
-class FindProtocols(QThread):
-    def __init__(self, parent=None):
-        QThread.__init__(self, parent)
-
-
-    def on_obj(self, obj):
-        self.obj = obj
-
-    def run(self):
-        self.obj.find_protocols()
-
-
-class GetAllProtocols(QThread):
-    def __init__(self, parent=None):
-        QThread.__init__(self, parent)
-
-    def on_obj(self, obj):
-        self.obj = obj
-
-    def params(self, counts, rpp):
-        self.counts = counts
-        self.rpp = rpp
-
-    def run(self):
-        self.obj.get_all_pages(self.counts, self.rpp)
-
-
-class GetTotalResults(QThread):
-    def __init__(self, parent=None):
-        QThread.__init__(self, parent)
-
-    def on_obj(self, obj):
-        self.obj = obj
-
-    def run(self):
-        self.obj.get_total_results()
 
 
 def main():
