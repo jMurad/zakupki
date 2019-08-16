@@ -152,10 +152,6 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         self.thread2 = threading.Thread(target=self.poisk.get_total_results, args=(self.evt2, self.evt3,))
         self.thread3 = threading.Thread(target=self.poisk.find_protocols, args=(self.evt3,))
 
-        # self.thread.started.connect(self.poisk.find_protocols)
-        # self.thread.started.connect(lambda: self.poisk.get_all_pages(2, 500))
-        # self.thread.started.connect(self.poisk.get_total_results)
-
     def closeEvent(self, e):
         self.stop()
 
