@@ -148,9 +148,9 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         self.evt1 = threading.Event()
         self.evt2 = threading.Event()
         self.evt3 = threading.Event()
-        self.thread1 = threading.Thread(target=self.poisk.get_all_pages, args=(2, 500, self.evt1, self.evt2))
-        self.thread2 = threading.Thread(target=self.poisk.get_total_results, args=(self.evt2, self.evt3,))
-        self.thread3 = threading.Thread(target=self.poisk.find_protocols, args=(self.evt3,))
+        self.thread1 = threading.Thread(target=self.poisk.get_all_pages, args=(2, 500, self.evt1))
+        self.thread2 = threading.Thread(target=self.poisk.get_total_results, args=(self.evt1,))
+        self.thread3 = threading.Thread(target=self.poisk.find_protocols, args=(self.evt1,))
 
     def closeEvent(self, e):
         self.stop()
@@ -206,14 +206,13 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         self.evt1.set()
         inputdata = self.validate_input()
         self.poisk.set_params(inputdata)
-        self.thread1.start()
-        # self.poisk.get_all_pages(2, 500)
-        print(self.thread2.isAlive())
         self.thread2.start()
-        # self.poisk.get_total_results()
+        self.thread2.join()
 
     def start(self):
         self.find()
+        self.thread1.start()
+        self.thread1.join()
         self.progressBar.setMinimum(0)
         self.progressBar.setMaximum(self.poisk.totalPages)
         self.thread3.start()
@@ -461,9 +460,9 @@ class Poisk(QObject):
         return r.text
 
     @Slot()
-    def find_protocols(self, evt3):
-        evt3.wait()
-        print('s3_start')
+    def find_protocols(self, evt):
+        evt.wait()
+        print('find_protocols: start')
         k = 0
         self.active = True
         for page in self.allPages:
@@ -489,25 +488,28 @@ class Poisk(QObject):
                     print({'datetime': datetm, 'id': idzakupki, 'url': urlprotocol}, k, '\n')
                     self.callExFunction.emit()
         self.endPoisk.emit('1')
-        print('s3_end')
+        print('find_protocols: end')
+        evt.set()
 
     @Slot()
-    def get_all_pages(self, counts, rpp, evt1, evt2):
-        evt1.wait()
-        print('s1_start')
+    def get_all_pages(self, counts, rpp, evt):
+        # def get_all_pages(self, counts, rpp, evt1, evt2):
+        evt.wait()
+        print('get_all_pages: start')
         self.totalPages = counts * rpp
         self.allPages.clear()
         self.trueResult.clear()
         for i in range(1, counts + 1):
             self.allPages.append(self.generate_request(i, rpp))
         self.endPoisk.emit('2')
-        print('s1_end')
-        evt2.set()
+        print('get_all_pages: end')
+        evt.set()
 
     @Slot()
-    def get_total_results(self, evt2, evt3):
-        print('s2_start')
-        evt2.wait()
+    def get_total_results(self, evt):
+        # def get_total_results(self, evt2, evt3):
+        print('get_total_results: start')
+        evt.wait()
         # page = self.allPages[0]
         page = self.generate_request(1, 10)
         htmlpage = self.get_html(page)
@@ -515,11 +517,11 @@ class Poisk(QObject):
         totalresults = bscontent.select('p.allRecords')[0].select('strong')[0].text
         self.callTotalResults.emit(totalresults)
         self.endPoisk.emit('3')
-        print('s2_end')
-        evt3.set()
+        print('get_total_results: end')
+        evt.set()
 
     def get_protocol_found(self, stat):
-        print('s3')
+        print('get_protocol_found:')
         itr = 0
         if stat:
             for tr in self.trueResult:
