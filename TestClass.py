@@ -145,12 +145,11 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         self.poisk.callTotalResults.connect(self.set_total_results)
         self.poisk.callExFunction.connect(self.increment_progress)
         self.poisk.endPoisk.connect(self.end_poisk())
-        self.evt1 = threading.Event()
-        self.evt2 = threading.Event()
-        self.evt3 = threading.Event()
-        self.thread1 = threading.Thread(target=self.poisk.get_all_pages, args=(2, 500, self.evt1))
-        self.thread2 = threading.Thread(target=self.poisk.get_total_results, args=(self.evt1,))
-        self.thread3 = threading.Thread(target=self.poisk.find_protocols, args=(self.evt1,))
+        self.evt = threading.Event()
+
+        # self.thread1 = threading.Thread(target=self.poisk.get_all_pages, args=(2, 500, self.evt1))
+        # self.thread2 = threading.Thread(target=self.poisk.get_total_results, args=(self.evt1,))
+        # self.thread3 = threading.Thread(target=self.poisk.find_protocols, args=(self.evt1,))
 
     def closeEvent(self, e):
         self.stop()
@@ -203,25 +202,24 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         return [ss, cf, fz, on, ph, pf, pt, df, dt, uf, ut, rg, ex]
 
     def find(self):
-        self.evt1.set()
+        self.evt.set()
         inputdata = self.validate_input()
         self.poisk.set_params(inputdata)
-        self.thread2.start()
-        self.thread2.join()
+        self.poisk.get_total_results(self.evt)
+        # self.thread2.start()
 
     def start(self):
         self.find()
-        self.thread1.start()
-        self.thread1.join()
+        self.poisk.get_all_pages(2, 500, self.evt)
+        # self.thread1.start()
         self.progressBar.setMinimum(0)
         self.progressBar.setMaximum(self.poisk.totalPages)
-        self.thread3.start()
+        self.poisk.find_protocols(self.evt)
+        # self.thread3.start()
         self.pbValue = 0
 
     def stop(self):
         self.poisk.active = False
-        # self.thread3.quit()
-        # self.thread3.wait()
         self.progressBar.setValue(0)
 
     def end_poisk(self):
@@ -372,6 +370,12 @@ class Poisk(QObject):
         self.sess = requests.Session()
         self.active = True
 
+    def threadd(func):
+        def wrapper(*args, **kwargs):
+            current_thread = threading.Thread(target=func, args=args, kwargs=kwargs)
+            current_thread.start()
+        return wrapper
+
     def set_params(self, inputdata):
         self.searchString = inputdata[0]
         self.conformity = inputdata[1]
@@ -459,6 +463,7 @@ class Poisk(QObject):
         r = self.sess.get(url, headers=headers)
         return r.text
 
+    @threadd
     @Slot()
     def find_protocols(self, evt):
         evt.wait()
@@ -491,6 +496,7 @@ class Poisk(QObject):
         print('find_protocols: end')
         evt.set()
 
+    @threadd
     @Slot()
     def get_all_pages(self, counts, rpp, evt):
         # def get_all_pages(self, counts, rpp, evt1, evt2):
@@ -505,6 +511,7 @@ class Poisk(QObject):
         print('get_all_pages: end')
         evt.set()
 
+    @threadd
     @Slot()
     def get_total_results(self, evt):
         # def get_total_results(self, evt2, evt3):
