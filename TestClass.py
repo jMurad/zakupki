@@ -141,15 +141,11 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         self.pushButton_4.clicked.connect(self.stop)
 
         self.poisk = Poisk()
-
         self.poisk.callTotalResults.connect(self.set_total_results)
         self.poisk.callExFunction.connect(self.increment_progress)
-        self.poisk.endPoisk.connect(self.end_poisk())
+        self.poisk.endPoisk.connect(self.end_poisk)
+        self.poisk.prt_found.connect(self.prt_found)
         self.evt = threading.Event()
-
-        # self.thread1 = threading.Thread(target=self.poisk.get_all_pages, args=(2, 500, self.evt1))
-        # self.thread2 = threading.Thread(target=self.poisk.get_total_results, args=(self.evt1,))
-        # self.thread3 = threading.Thread(target=self.poisk.find_protocols, args=(self.evt1,))
 
     def closeEvent(self, e):
         self.stop()
@@ -199,34 +195,42 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         ut = self.lineEdit_8.text()
         rg = [x.data() for x in self.listWidget.selectedIndexes()]
         ex = self.lineEdit_9.text()
-        return [ss, cf, fz, on, ph, pf, pt, df, dt, uf, ut, rg, ex]
+
+        eml = self.lineEdit_10.text()
+        prt = self.lineEdit_11.text()
+        dlt = int(self.spinBox.text())
+
+        return [ss, cf, fz, on, ph, pf, pt, df, dt, uf, ut, rg, ex, eml, prt, dlt]
 
     def find(self):
-        self.evt.set()
         inputdata = self.validate_input()
         self.poisk.set_params(inputdata)
+        self.evt.set()
         self.poisk.get_total_results(self.evt)
         # self.thread2.start()
 
     def start(self):
         self.find()
         self.poisk.get_all_pages(2, 500, self.evt)
-        # self.thread1.start()
-        self.progressBar.setMinimum(0)
-        self.progressBar.setMaximum(self.poisk.totalPages)
+        print(' Vsego', self.poisk.totalPages)
         self.poisk.find_protocols(self.evt)
-        # self.thread3.start()
+        print('lineEdit_11:', self.lineEdit_11.text())
         self.pbValue = 0
 
     def stop(self):
         self.poisk.active = False
         self.progressBar.setValue(0)
 
-    def end_poisk(self):
-        # self.thread3.quit()
-        pass
+    def end_poisk(self, idd):
+        if idd == '2':
+            self.progressBar.setMinimum(0)
+            self.progressBar.setMaximum(self.poisk.totalPages)
+
+    def prt_found(self, counts):
+        self.label_22.setText(str(counts))
 
     def increment_progress(self):
+        print(' Active:', self.poisk.active, self.pbValue)
         if self.poisk.active:
             self.pbValue += 1
             self.progressBar.setValue(self.pbValue)
@@ -239,10 +243,10 @@ class Poisk(QObject):
     callExFunction = Signal()
     callTotalResults = Signal(str)
     endPoisk = Signal(str)
+    prt_found = Signal(int)
 
     def __init__(self):
         super().__init__()
-        self.lock = threading.Lock()
         self.regions_dic = {
             'Адыгея Респ': ['region_regions_5277349', '5277349'],
             'Алтай Респ': ['region_regions_5277385', '5277385'],
@@ -369,6 +373,9 @@ class Poisk(QObject):
         }
         self.sess = requests.Session()
         self.active = True
+        self.email = ''
+        self.delta = 30
+        self.prtcol = ''
 
     def threadd(func):
         def wrapper(*args, **kwargs):
@@ -390,6 +397,10 @@ class Poisk(QObject):
         self.udTo = inputdata[10]
         self.regions = inputdata[11]
         self.exclText = inputdata[12]
+
+        self.email = inputdata[13]
+        self.prtcol = inputdata[14]
+        self.delta = inputdata[15]
 
     def generate_request(self, pgnum, rpp):
         url = f'http://zakupki.gov.ru/epz/order/quicksearch/search.html?'
@@ -482,16 +493,18 @@ class Poisk(QObject):
                     idzakupki = urlprotocol.split('=')[1]
                     htmlprotocol = self.get_html(urlprotocol)
                     soup = BeautifulSoup(htmlprotocol, 'lxml')
-                    resultsoup = soup.find(text=re.compile(r'Протокол признания участника уклонившимся'))
+                    resultsoup = soup.find(text=re.compile(self.prtcol))
                     datetm = 'not found'
                     if resultsoup:
                         datetm = resultsoup.parent.parent.parent.select('td')[1].select('div span')[1].text.strip()
                         resultstr = {'datetime': datetm, 'id': idzakupki, 'url': urlprotocol}
                         self.trueResult.append(resultstr)
-                        self.send_notification(datetm, str(resultstr))
+                        self.send_notification(datetm, str(resultstr), self.delta)
                     k += 1
                     print({'datetime': datetm, 'id': idzakupki, 'url': urlprotocol}, k, '\n')
                     self.callExFunction.emit()
+                else:
+                    break
         self.endPoisk.emit('1')
         print('find_protocols: end')
         evt.set()
@@ -536,17 +549,19 @@ class Poisk(QObject):
                 print(tr, itr)
         return self.trueResult
 
-    def send_notification(self, datetm, message):
-        pass
+    @threadd
+    @Slot()
+    def send_notification(self, datetm, message, delta):
+        print('delta', type(delta), delta)
         minutes = self.time_condition(datetm)
-        if minutes < 30:
+        if minutes < delta:
             self.send_email(message)
+            self.prt_found.emit(len(self.trueResult))
 
-    @staticmethod
-    def send_email(message):
+    def send_email(self, message):
         fromaddr = "exsend@bk.ru"
-        toaddr = "deit91@yandex.ru"
-
+        toaddr = self.email
+        print('E-mail:', self.email)
         msg = MIMEMultipart()
         msg['From'] = fromaddr
         msg['To'] = toaddr
