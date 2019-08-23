@@ -1,25 +1,19 @@
 import requests
-from bs4 import BeautifulSoup
-import re
-from datetime import datetime, timedelta
 import smtplib
+import re
+import sys
+import gui
+import threading
+from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import sys
-from PySide2 import QtWidgets
-import gui
-from PySide2.QtCore import Qt, QRegExp, QThread, QObject, Signal, Slot
+from PySide2.QtCore import Qt, QRegExp, QObject, Signal, Slot, QItemSelectionModel
 from PySide2.QtGui import QRegExpValidator
-from PySide2 import QtCore
-import threading
+from PySide2.QtWidgets import QMainWindow, QMessageBox, QApplication
 
 
-class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
-    sig = Signal(object)
-    sig2 = Signal(object)
-    sig3 = Signal(object)
-    params = Signal(int, int)
-
+class GuiClass(QMainWindow, gui.Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.regions = [
@@ -125,6 +119,7 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         self.lineEdit_8.setValidator(validator)
         validator = QRegExpValidator(QRegExp("[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}"))
         self.lineEdit_10.setValidator(validator)
+
         self.lineEdit_1.textChanged.connect(lambda: self.valid_form('lineEdit_9'))
         self.lineEdit_2.textChanged.connect(lambda: self.valid_form('lineEdit_2'))
         self.lineEdit_9.textChanged.connect(lambda: self.valid_form('lineEdit_9'))
@@ -142,13 +137,14 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
 
         self.poisk = Poisk()
         self.poisk.callTotalResults.connect(self.set_total_results)
-        self.poisk.callExFunction.connect(self.increment_progress)
+        self.poisk.callIncrementFunc.connect(self.increment_progress)
         self.poisk.endPoisk.connect(self.end_poisk)
         self.poisk.prt_found.connect(self.prt_found)
         self.evt = threading.Event()
 
     def closeEvent(self, e):
         self.stop()
+        print('Exit MainWindow')
 
     def valid_form(self, elem):
         if elem == 'checkBox_1':
@@ -169,7 +165,7 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
                 self.lineEdit_9.setText('')
         if elem == 'listWidget':
             if len(self.listWidget.selectedItems()) >= 6:
-                self.listWidget.setCurrentRow(self.listWidget.currentRow(), QtCore.QItemSelectionModel.Deselect)
+                self.listWidget.setCurrentRow(self.listWidget.currentRow(), QItemSelectionModel.Deselect)
 
     def validate_input(self):
         ss = self.lineEdit_1.text()
@@ -203,15 +199,18 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         pattern = re.compile('(^|\s)[-a-z0-9_.]+@([-a-z0-9]+\.)+[a-z]{2,6}(\s|$)')
         is_valid = pattern.match(text)
         text = self.lineEdit_11.text()
-        if (not is_valid) or (text == ''):
+        if not is_valid:
+            self.error_dialog("Введите почту на которую\nбудут отправляться уведомления")
             return False
-        else:
-            return [ss, cf, fz, on, ph, pf, pt, df, dt, uf, ut, rg, ex, eml, prt, dlt]
+        if text == '':
+            self.error_dialog("Введите название протокола")
+            return False
+        return [ss, cf, fz, on, ph, pf, pt, df, dt, uf, ut, rg, ex, eml, prt, dlt]
 
     @staticmethod
     def error_dialog(msg):
-        diag = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Critical, u"Error Message", msg)
-        diag.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        diag = QMessageBox(QMessageBox.Critical, u"Error Message", msg)
+        diag.setWindowFlags(Qt.WindowStaysOnTopHint)
         diag.exec_()
 
     def find(self):
@@ -220,8 +219,6 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
             self.poisk.set_params(inputdata)
             self.evt.set()
             self.poisk.get_total_results(self.evt)
-        else:
-            self.error_dialog("Введите почту и название протокола")
 
     def start(self):
         inputdata = self.validate_input()
@@ -234,8 +231,6 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
             self.poisk.find_protocols(self.evt)
             print('lineEdit_11:', self.lineEdit_11.text())
             self.pbValue = 0
-        else:
-            self.error_dialog("Введите почту и название протокола")
 
     def stop(self):
         self.poisk.active = False
@@ -260,7 +255,7 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
 
 
 class Poisk(QObject):
-    callExFunction = Signal()
+    callIncrementFunc = Signal()
     callTotalResults = Signal(str)
     endPoisk = Signal(str)
     prt_found = Signal(int)
@@ -522,7 +517,7 @@ class Poisk(QObject):
                         self.send_notification(datetm, str(resultstr), self.delta)
                     k += 1
                     print({'datetime': datetm, 'id': idzakupki, 'url': urlprotocol}, k, '\n')
-                    self.callExFunction.emit()
+                    self.callIncrementFunc.emit()
                 else:
                     break
         self.endPoisk.emit('1')
@@ -615,7 +610,7 @@ class Poisk(QObject):
 
 
 def main():
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     window = GuiClass()
     window.show()
     app.exec_()
