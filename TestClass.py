@@ -7,9 +7,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import sys
 from PySide2 import QtWidgets
-from PySide2.QtCore import QThread, QObject, Signal, Slot
 import gui
-from PySide2.QtCore import Qt, QRegExp
+from PySide2.QtCore import Qt, QRegExp, QThread, QObject, Signal, Slot
 from PySide2.QtGui import QRegExpValidator
 from PySide2 import QtCore
 import threading
@@ -129,6 +128,7 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         self.lineEdit_1.textChanged.connect(lambda: self.valid_form('lineEdit_9'))
         self.lineEdit_2.textChanged.connect(lambda: self.valid_form('lineEdit_2'))
         self.lineEdit_9.textChanged.connect(lambda: self.valid_form('lineEdit_9'))
+        self.lineEdit_10.textChanged.connect(lambda: self.valid_form('lineEdit_10'))
         self.checkBox_1.stateChanged.connect(lambda: self.valid_form('checkBox_1'))
         self.checkBox_2.stateChanged.connect(lambda: self.valid_form('checkBox_2'))
         self.checkBox_3.stateChanged.connect(lambda: self.valid_form('fz1'))
@@ -168,7 +168,6 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
             if text == '':
                 self.lineEdit_9.setText('')
         if elem == 'listWidget':
-            cr = self.listWidget.currentRow()
             if len(self.listWidget.selectedItems()) >= 6:
                 self.listWidget.setCurrentRow(self.listWidget.currentRow(), QtCore.QItemSelectionModel.Deselect)
 
@@ -200,22 +199,43 @@ class GuiClass(QtWidgets.QMainWindow, gui.Ui_MainWindow):
         prt = self.lineEdit_11.text()
         dlt = int(self.spinBox.text())
 
-        return [ss, cf, fz, on, ph, pf, pt, df, dt, uf, ut, rg, ex, eml, prt, dlt]
+        text = self.lineEdit_10.text()
+        pattern = re.compile('(^|\s)[-a-z0-9_.]+@([-a-z0-9]+\.)+[a-z]{2,6}(\s|$)')
+        is_valid = pattern.match(text)
+        text = self.lineEdit_11.text()
+        if (not is_valid) or (text == ''):
+            return False
+        else:
+            return [ss, cf, fz, on, ph, pf, pt, df, dt, uf, ut, rg, ex, eml, prt, dlt]
+
+    @staticmethod
+    def error_dialog(msg):
+        diag = QtWidgets.QMessageBox(QtWidgets.QMessageBox.Critical, u"Error Message", msg)
+        diag.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        diag.exec_()
 
     def find(self):
         inputdata = self.validate_input()
-        self.poisk.set_params(inputdata)
-        self.evt.set()
-        self.poisk.get_total_results(self.evt)
-        # self.thread2.start()
+        if inputdata:
+            self.poisk.set_params(inputdata)
+            self.evt.set()
+            self.poisk.get_total_results(self.evt)
+        else:
+            self.error_dialog("Введите почту и название протокола")
 
     def start(self):
-        self.find()
-        self.poisk.get_all_pages(2, 500, self.evt)
-        print(' Vsego', self.poisk.totalPages)
-        self.poisk.find_protocols(self.evt)
-        print('lineEdit_11:', self.lineEdit_11.text())
-        self.pbValue = 0
+        inputdata = self.validate_input()
+        if inputdata:
+            self.poisk.set_params(inputdata)
+            self.evt.set()
+            self.poisk.get_total_results(self.evt)
+            self.poisk.get_all_pages(2, 500, self.evt)
+            print(' Vsego', self.poisk.totalPages)
+            self.poisk.find_protocols(self.evt)
+            print('lineEdit_11:', self.lineEdit_11.text())
+            self.pbValue = 0
+        else:
+            self.error_dialog("Введите почту и название протокола")
 
     def stop(self):
         self.poisk.active = False
